@@ -18,19 +18,18 @@
   <p>{{ p['descripcion'] }}</p>
   <div class="price-big">{{ p['precio']|precio }}</div>
 
-  {% if p['estado'] == 'available' %}
+  {% if not p['agotado'] %}
+    {% if p['cantidad'] > 1 %}
+      <p style="color:var(--muted); font-size:13px; margin-top:8px;">Quedan {{ p['disponibles'] }} disponibles</p>
+    {% endif %}
     <form class="form-reserva" method="post" action="{{ url_for('reservar', producto_id=p['id']) }}">
       <label for="nombre">Tu nombre</label>
       <input type="text" id="nombre" name="nombre" placeholder="¿Quién regala?" required autofocus>
       <button class="button" type="submit" style="width:100%;">Quiero regalarlo 🎁</button>
     </form>
   {% else %}
-    <div class="status-banner {{ p['estado'] }}">
-      {% if p['estado'] == 'reserved' %}
-        🎀 Este regalo ya está reservado.
-      {% else %}
-        ✅ Este regalo ya fue regalado. ¡Gracias!
-      {% endif %}
+    <div class="status-banner agotado">
+      😢 Este regalo ya no está disponible.
     </div>
     <a class="button" href="{{ url_for('home') }}#wishlist">Elegir otro regalo</a>
   {% endif %}

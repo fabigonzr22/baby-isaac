@@ -2,10 +2,15 @@
 
 Arquitectura:
 - Página pública: portada, wishlist con filtros, producto, "Quiero regalarlo",
-  nombre, confirmación, datos de Binance, aviso de pendiente.
-- Panel privado (admin): login, dashboard, estados available/reserved/paid,
-  confirmar pago, CRUD de regalos.
-- Base de datos SQLite: productos, reservas, regaladores, estados de pago.
+  nombre, confirmación, datos de Binance, aviso de pendiente + mensaje de
+  contacto + "¿regalar algo más?".
+- Panel privado (admin): login, dashboard, stock por regalo, confirmar pago,
+  CRUD de regalos.
+- Base de datos SQLite: productos (con cantidad/stock), regaladores, reservas.
+
+Modelo de stock: cada producto tiene `cantidad` (unidades que se pueden regalar).
+Cada reserva (reserved/paid) descuenta 1 unidad. Un producto queda "agotado"
+cuando reservas activas == cantidad.
 """
 import os
 import sqlite3
@@ -28,12 +33,16 @@ ADMIN_USER = os.environ.get("ADMIN_USER", "fabi")
 DEFAULT_ADMIN_PASSWORD_HASH = generate_password_hash(
     os.environ.get("ADMIN_PASSWORD", "isaac2026"))
 
-# Datos de pago Binance (se pueden editar desde el panel admin → Configuración).
+# Datos de pago Binance y mensaje de contacto (editables desde el panel admin).
 DEFAULT_BINANCE_DATA = os.environ.get("BINANCE_DATA") or (
     "USDT · Red TRC20\n"
     "Dirección: TU_DIRECCION_DE_BINANCE_AQUI\n"
     "Nombre: TU_NOMBRE_EN_BINANCE\n"
     "Monto: el indicado en el regalo")
+
+DEFAULT_CONTACTO = (
+    "Escríbeme por WhatsApp para confirmar tu pago: "
+    "TU_NUMERO_DE_WHATSAPP_AQUI")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
@@ -60,6 +69,15 @@ def close_db(exc):
 
 def init_db():
     db = sqlite3.connect(DB_PATH)
+    db.row_factory = sqlite3.Row
+
+    # Migración de esquema antiguo (sin columna `cantidad` en productos)
+    cols = [r[1] for r in db.execute("PRAGMA table_info(productos)").fetchall()]
+    if cols and "cantidad" not in cols:
+        db.execute("DROP TABLE IF EXISTS reservas")
+        db.execute("DROP TABLE IF EXISTS regaladores")
+        db.execute("DROP TABLE IF EXISTS productos")
+
     db.executescript("""
     CREATE TABLE IF NOT EXISTS productos (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,8 +86,7 @@ def init_db():
         categoria   TEXT NOT NULL,
         precio      REAL NOT NULL,
         emoji       TEXT NOT NULL DEFAULT '🎁',
-        estado      TEXT NOT NULL DEFAULT 'available'
-            CHECK (estado IN ('available','reserved','paid')),
+        cantidad    INTEGER NOT NULL DEFAULT 1,
         creado_en   TEXT NOT NULL
     );
 
@@ -96,35 +113,36 @@ def init_db():
     """)
     db.commit()
 
-    # Semillas iniciales si la tabla está vacía
+    # Semillas iniciales si la tabla está vacía.
+    # cantidad: cuántas unidades se pueden regalar de cada cosa.
     cur = db.execute("SELECT COUNT(*) FROM productos")
     if cur.fetchone()[0] == 0:
         seed = [
-            ("Bodys de algodón", "Suaves y cómodos para el día a día de Isaac.", "Ropa", 5, "👕"),
-            ("Pijamas", "Para que Isaac duerma calentito y cómodo.", "Ropa", 15, "🌙"),
-            ("Medias", "Para mantener calentitos esos piececitos.", "Ropa", 10, "🧦"),
-            ("Franelas", "Franelas suaves para el día a día.", "Ropa", 16, "👚"),
-            ("Camisas", "Camisas bonitas para Isaac.", "Ropa", 5, "👔"),
-            ("Pantalones", "Pantalones cómodos para el bebé.", "Ropa", 15, "👖"),
-            ("Colchón para colecho", "Para que Isaac duerma cerca y seguro.", "Dormir", 35, "🛏️"),
-            ("Sábanas de algodón", "Sábanas suaves de algodón para la cuna.", "Dormir", 28, "🧺"),
-            ("Mantas", "Mantas abrigadas para Isaac.", "Dormir", 24, "🧸"),
-            ("Swaddle", "Para envolver y calmar al bebé.", "Dormir", 25, "🦢"),
-            ("Lámpara de noche", "Luz suave para las noches de Isaac.", "Dormir", 25, "💡"),
-            ("Porta bebé", "Para llevar a Isaac cerca de ti.", "Paseo", 34, "👶"),
-            ("Libro para bebé (0-3 meses)", "Primeras lecturas para estimular a Isaac.", "Aprendizaje", 25, "📖"),
-            ("Pañalera", "Para salir de paseo con todo lo necesario.", "Paseo", 40, "🎒"),
-            ("Pañales", "Los básicos de todo bebé.", "Cuidado", 0, "🧷"),
-            ("Termómetro digital", "Para cuidar la temperatura de Isaac.", "Cuidado", 30, "🌡️"),
-            ("Aspirador nasal eléctrico", "Para despejar la naricita de Isaac.", "Cuidado", 0, "🔌"),
-            ("Aspirador nasal manual", "Alternativa manual y práctica.", "Cuidado", 20, "🤧"),
-            ("Nebulizador", "Para cuidar las vías respiratorias de Isaac.", "Cuidado", 0, "🫧"),
-            ("Teteros / limpiador de tetero", "Kit de teteros y limpiador.", "Alimentación", 65, "🍼"),
+            ("Bodys de algodón", "Suaves y cómodos para el día a día de Isaac.", "Ropa", 5, "👕", 5),
+            ("Pijamas", "Para que Isaac duerma calentito y cómodo.", "Ropa", 15, "🌙", 5),
+            ("Medias", "Para mantener calentitos esos piececitos.", "Ropa", 10, "🧦", 5),
+            ("Franelas", "Franelas suaves para el día a día.", "Ropa", 16, "👚", 5),
+            ("Camisas", "Camisas bonitas para Isaac.", "Ropa", 5, "👔", 5),
+            ("Pantalones", "Pantalones cómodos para el bebé.", "Ropa", 15, "👖", 5),
+            ("Colchón para colecho", "Para que Isaac duerma cerca y seguro.", "Dormir", 35, "🛏️", 1),
+            ("Sábanas de algodón", "Sábanas suaves de algodón para la cuna.", "Dormir", 28, "🧺", 1),
+            ("Mantas", "Mantas abrigadas para Isaac.", "Dormir", 24, "🧸", 1),
+            ("Swaddle", "Para envolver y calmar al bebé.", "Dormir", 25, "🦢", 1),
+            ("Lámpara de noche", "Luz suave para las noches de Isaac.", "Dormir", 25, "💡", 1),
+            ("Porta bebé", "Para llevar a Isaac cerca de ti.", "Paseo", 34, "👶", 1),
+            ("Libro para bebé (0-3 meses)", "Primeras lecturas para estimular a Isaac.", "Aprendizaje", 25, "📖", 1),
+            ("Pañalera", "Para salir de paseo con todo lo necesario.", "Paseo", 40, "🎒", 1),
+            ("Pañales", "Los básicos de todo bebé.", "Cuidado", 0, "🧷", 5),
+            ("Termómetro digital", "Para cuidar la temperatura de Isaac.", "Cuidado", 30, "🌡️", 1),
+            ("Aspirador nasal eléctrico", "Para despejar la naricita de Isaac.", "Cuidado", 0, "🔌", 1),
+            ("Aspirador nasal manual", "Alternativa manual y práctica.", "Cuidado", 20, "🤧", 1),
+            ("Nebulizador", "Para cuidar las vías respiratorias de Isaac.", "Cuidado", 0, "🫧", 1),
+            ("Teteros / limpiador de tetero", "Kit de teteros y limpiador.", "Alimentación", 65, "🍼", 1),
         ]
         now = datetime.now(timezone.utc).isoformat()
         db.executemany(
-            "INSERT INTO productos (nombre, descripcion, categoria, precio, emoji, estado, creado_en) "
-            "VALUES (?,?,?,?,?, 'available', ?)", [(*p, now) for p in seed])
+            "INSERT INTO productos (nombre, descripcion, categoria, precio, emoji, cantidad, creado_en) "
+            "VALUES (?,?,?,?,?,?,?)", [(*p, now) for p in seed])
         db.commit()
     db.close()
 
@@ -137,15 +155,6 @@ def now_iso():
 
 
 CATEGORIES = ["Ropa", "Dormir", "Paseo", "Alimentación", "Cuidado", "Aprendizaje"]
-CATEGORY_EMOJI = {
-    "Ropa": "👕", "Dormir": "🛏️", "Paseo": "👶", "Alimentación": "🍼",
-    "Cuidado": "🧷", "Aprendizaje": "📖",
-}
-STATUS_LABEL = {
-    "available": "Disponible",
-    "reserved": "Reservado",
-    "paid": "Pagado",
-}
 
 
 def is_admin():
@@ -170,6 +179,11 @@ def get_binance_data():
     return get_config(db, "binance_data", DEFAULT_BINANCE_DATA)
 
 
+def get_contacto():
+    db = get_db()
+    return get_config(db, "contacto", DEFAULT_CONTACTO)
+
+
 def check_admin_password(password):
     db = get_db()
     stored_hash = get_config(db, "admin_password_hash")
@@ -190,6 +204,37 @@ def precio_filter(precio):
     return f"${p:,.0f}"
 
 
+def contar_reservas_por_producto():
+    """Devuelve {producto_id: {'reserved': n, 'paid': n}}."""
+    db = get_db()
+    rows = db.execute(
+        "SELECT producto_id, estado, COUNT(*) AS n FROM reservas "
+        "GROUP BY producto_id, estado").fetchall()
+    m = {}
+    for r in rows:
+        pid = r["producto_id"]
+        m.setdefault(pid, {"reserved": 0, "paid": 0})
+        m[pid][r["estado"]] = r["n"]
+    return m
+
+
+def enriquecer(rows):
+    """Añade a cada producto: reservados, pagados, disponibles y etiqueta."""
+    counts = contar_reservas_por_producto()
+    out = []
+    for p in rows:
+        pid = p["id"]
+        c = counts.get(pid, {"reserved": 0, "paid": 0})
+        disp = max(0, p["cantidad"] - c["reserved"] - c["paid"])
+        d = dict(p)
+        d["reservados"] = c["reserved"]
+        d["pagados"] = c["paid"]
+        d["disponibles"] = disp
+        d["agotado"] = disp <= 0
+        out.append(d)
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Página pública
 # ---------------------------------------------------------------------------
@@ -198,17 +243,16 @@ def home():
     db = get_db()
     categoria = request.args.get("categoria", "")
     if categoria and categoria in CATEGORIES:
-        productos = db.execute(
+        rows = db.execute(
             "SELECT * FROM productos WHERE categoria = ? ORDER BY id",
             (categoria,)).fetchall()
     else:
-        productos = db.execute(
-            "SELECT * FROM productos ORDER BY id").fetchall()
+        rows = db.execute("SELECT * FROM productos ORDER BY id").fetchall()
+    productos = enriquecer(rows)
     return render_template("index.html",
                            productos=productos,
                            categorias=CATEGORIES,
-                           categoria_actual=categoria,
-                           STATUS_LABEL=STATUS_LABEL)
+                           categoria_actual=categoria)
 
 
 @app.route("/regalo/<int:producto_id>")
@@ -218,7 +262,8 @@ def producto(producto_id):
                    (producto_id,)).fetchone()
     if p is None:
         abort(404)
-    return render_template("producto.html", p=p, STATUS_LABEL=STATUS_LABEL)
+    (p,) = enriquecer([p])
+    return render_template("producto.html", p=p)
 
 
 @app.route("/regalo/<int:producto_id>/reservar", methods=["POST"])
@@ -234,8 +279,9 @@ def reservar(producto_id):
         flash("Por favor escribe tu nombre para continuar.", "error")
         return redirect(url_for("producto", producto_id=producto_id))
 
-    if p["estado"] != "available":
-        flash("Este regalo ya fue reservado. ¡Elige otro!", "error")
+    (p,) = enriquecer([p])
+    if p["agotado"]:
+        flash("Este regalo ya no está disponible. ¡Elige otro!", "error")
         return redirect(url_for("producto", producto_id=producto_id))
 
     # Crear regalador y reserva en una transacción
@@ -246,8 +292,6 @@ def reservar(producto_id):
     db.execute(
         "INSERT INTO reservas (producto_id, regalador_id, estado, creado_en) "
         "VALUES (?,?, 'reserved', ?)", (producto_id, regalador_id, now))
-    db.execute("UPDATE productos SET estado = 'reserved' WHERE id = ?",
-               (producto_id,))
     db.commit()
 
     session["reserva_producto_id"] = producto_id
@@ -265,7 +309,8 @@ def confirmacion(producto_id):
         abort(404)
     nombre = session.get("reserva_nombre", "")
     return render_template("confirmacion.html", p=p, nombre=nombre,
-                           binance=get_binance_data())
+                           binance=get_binance_data(),
+                           contacto=get_contacto())
 
 
 # ---------------------------------------------------------------------------
@@ -301,9 +346,9 @@ def dashboard():
     if not is_admin():
         return redirect(url_for("admin_login"))
     db = get_db()
-    productos = db.execute(
-        "SELECT * FROM productos ORDER BY estado, id").fetchall()
-    # reservas con nombre del regalador
+    rows = db.execute("SELECT * FROM productos ORDER BY id").fetchall()
+    productos = enriquecer(rows)
+
     reservas = db.execute("""
         SELECT r.*, p.nombre AS producto_nombre, p.precio, p.emoji,
                rg.nombre AS regalador_nombre
@@ -312,16 +357,21 @@ def dashboard():
         JOIN regaladores rg ON rg.id = r.regalador_id
         ORDER BY r.creado_en DESC
     """).fetchall()
+
+    total_disponibles = sum(p["disponibles"] for p in productos)
+    total_reservados = sum(p["reservados"] for p in productos)
+    total_pagados = sum(p["pagados"] for p in productos)
     counts = {
-        "available": db.execute("SELECT COUNT(*) c FROM productos WHERE estado='available'").fetchone()["c"],
-        "reserved": db.execute("SELECT COUNT(*) c FROM productos WHERE estado='reserved'").fetchone()["c"],
-        "paid": db.execute("SELECT COUNT(*) c FROM productos WHERE estado='paid'").fetchone()["c"],
+        "available": total_disponibles,
+        "reserved": total_reservados,
+        "paid": total_pagados,
     }
     return render_template("dashboard.html",
                            productos=productos, reservas=reservas,
-                           counts=counts, STATUS_LABEL=STATUS_LABEL,
+                           counts=counts,
                            categorias=CATEGORIES,
-                           binance=get_binance_data())
+                           binance=get_binance_data(),
+                           contacto=get_contacto())
 
 
 @app.route("/admin/config", methods=["POST"])
@@ -334,6 +384,11 @@ def guardar_config():
         set_config(db, "binance_data", binance)
         flash("Datos de pago actualizados ✅", "ok")
 
+    contacto = request.form.get("contacto", "").strip()
+    if contacto:
+        set_config(db, "contacto", contacto)
+        flash("Mensaje de contacto actualizado ✅", "ok")
+
     nueva_pass = request.form.get("nueva_password", "")
     if nueva_pass:
         set_config(db, "admin_password_hash", generate_password_hash(nueva_pass))
@@ -342,42 +397,31 @@ def guardar_config():
     return redirect(url_for("dashboard"))
 
 
-@app.route("/admin/regalo/<int:producto_id>/confirmar", methods=["POST"])
-def confirmar_pago(producto_id):
+# --- Reservas: confirmar pago / liberar (por reserva individual) ---
+@app.route("/admin/reserva/<int:reserva_id>/confirmar", methods=["POST"])
+def confirmar_pago(reserva_id):
     if not is_admin():
         return redirect(url_for("admin_login"))
     db = get_db()
-    p = db.execute("SELECT * FROM productos WHERE id = ?",
-                   (producto_id,)).fetchone()
-    if p is None:
+    r = db.execute("SELECT * FROM reservas WHERE id = ?", (reserva_id,)).fetchone()
+    if r is None:
         abort(404)
-    db.execute("UPDATE productos SET estado = 'paid' WHERE id = ?",
-               (producto_id,))
-    db.execute(
-        "UPDATE reservas SET estado = 'paid', pagado_en = ? "
-        "WHERE producto_id = ? AND estado = 'reserved'",
-        (now_iso(), producto_id))
+    db.execute("UPDATE reservas SET estado = 'paid', pagado_en = ? WHERE id = ?",
+               (now_iso(), reserva_id))
     db.commit()
-    flash(f"'{p['nombre']}' marcado como PAGADO ✅", "ok")
+    flash("Pago confirmado ✅", "ok")
     return redirect(url_for("dashboard"))
 
 
-@app.route("/admin/regalo/<int:producto_id>/liberar", methods=["POST"])
-def liberar_regalo(producto_id):
-    """Devuelve un regalo a 'available' (si alguien se arrepintió o no pagó)."""
+@app.route("/admin/reserva/<int:reserva_id>/liberar", methods=["POST"])
+def liberar_reserva(reserva_id):
+    """Libera una reserva (si alguien se arrepintió o no pagó)."""
     if not is_admin():
         return redirect(url_for("admin_login"))
     db = get_db()
-    p = db.execute("SELECT * FROM productos WHERE id = ?",
-                   (producto_id,)).fetchone()
-    if p is None:
-        abort(404)
-    db.execute("UPDATE productos SET estado = 'available' WHERE id = ?",
-               (producto_id,))
-    db.execute("DELETE FROM reservas WHERE producto_id = ? AND estado = 'reserved'",
-               (producto_id,))
+    db.execute("DELETE FROM reservas WHERE id = ?", (reserva_id,))
     db.commit()
-    flash(f"'{p['nombre']}' vuelto a Disponible.", "ok")
+    flash("Reserva liberada (unidad disponible de nuevo).", "ok")
     return redirect(url_for("dashboard"))
 
 
@@ -391,6 +435,7 @@ def nuevo_regalo():
     categoria = request.form.get("categoria", "").strip()
     precio = request.form.get("precio", "0").strip()
     emoji = request.form.get("emoji", "🎁").strip()
+    cantidad = request.form.get("cantidad", "1").strip()
 
     if not nombre or not categoria:
         flash("Nombre y categoría son obligatorios.", "error")
@@ -400,12 +445,16 @@ def nuevo_regalo():
         precio_f = float(precio)
     except ValueError:
         precio_f = 0.0
+    try:
+        cantidad_i = max(1, int(cantidad))
+    except ValueError:
+        cantidad_i = 1
 
     db = get_db()
     db.execute(
-        "INSERT INTO productos (nombre, descripcion, categoria, precio, emoji, estado, creado_en) "
-        "VALUES (?,?,?,?,?, 'available', ?)",
-        (nombre, descripcion, categoria, precio_f, emoji, now_iso()))
+        "INSERT INTO productos (nombre, descripcion, categoria, precio, emoji, cantidad, creado_en) "
+        "VALUES (?,?,?,?,?,?,?)",
+        (nombre, descripcion, categoria, precio_f, emoji, cantidad_i, now_iso()))
     db.commit()
     flash(f"Regalo '{nombre}' agregado ✅", "ok")
     return redirect(url_for("dashboard"))
@@ -420,16 +469,21 @@ def editar_regalo(producto_id):
     categoria = request.form.get("categoria", "").strip()
     precio = request.form.get("precio", "0").strip()
     emoji = request.form.get("emoji", "🎁").strip()
+    cantidad = request.form.get("cantidad", "1").strip()
 
     try:
         precio_f = float(precio)
     except ValueError:
         precio_f = 0.0
+    try:
+        cantidad_i = max(1, int(cantidad))
+    except ValueError:
+        cantidad_i = 1
 
     db = get_db()
     db.execute(
-        "UPDATE productos SET nombre=?, descripcion=?, categoria=?, precio=?, emoji=? WHERE id=?",
-        (nombre, descripcion, categoria, precio_f, emoji, producto_id))
+        "UPDATE productos SET nombre=?, descripcion=?, categoria=?, precio=?, emoji=?, cantidad=? WHERE id=?",
+        (nombre, descripcion, categoria, precio_f, emoji, cantidad_i, producto_id))
     db.commit()
     flash(f"Regalo '{nombre}' actualizado ✅", "ok")
     return redirect(url_for("dashboard"))
@@ -451,8 +505,7 @@ def eliminar_regalo(producto_id):
 # ---------------------------------------------------------------------------
 # Arranque
 # ---------------------------------------------------------------------------
-# Inicializa la base de datos al importar (necesario para gunicorn en Render,
-# donde no se ejecuta el bloque `__main__`).
+# Inicializa la base de datos al importar (necesario para gunicorn en Render).
 init_db()
 
 

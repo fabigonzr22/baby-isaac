@@ -22,13 +22,21 @@
 
   <div class="binance-box">{{ binance }}</div>
 
+  <div class="contacto-box">
+    💬 {{ contacto }}
+  </div>
+
   <div class="pending">
     ⏳ <b>Tu regalo queda pendiente de confirmación.</b><br>
     Una vez verifiquemos el pago, lo marcaremos como recibido.
     ¡Gracias por tu detalle con Isaac! 💙
   </div>
 
-  <a class="button" href="{{ url_for('home') }}">Volver a la wishlist</a>
+  <div style="margin:12px 0 28px;">
+    <a class="button" href="{{ url_for('home') }}#wishlist">🎁 ¿Quieres regalarle algo más a Isaac?</a>
+  </div>
+
+  <p><a href="{{ url_for('home') }}" style="color:var(--muted); font-size:13px;">Volver al inicio</a></p>
 </section>
 
 <footer>

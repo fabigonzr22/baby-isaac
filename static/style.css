@@ -87,6 +87,8 @@ h1,h2,h3{ font-family:"Patrick Hand",cursive; font-weight:400; }
 .pill{ position:absolute; right:14px; top:14px; background:#ffffffd9; border-radius:99px; padding:6px 9px; font-size:9px; text-transform:uppercase; letter-spacing:.1em; font-weight:700; color:var(--ink); }
 .pill.reserved{ background:var(--butter); color:#5c4a00; }
 .pill.paid{ background:var(--green); color:#fff; }
+.pill.available{ background:#e7f6ec; color:#2c6e46; }
+.pill.agotado{ background:#fdeaea; color:#a23b3b; }
 
 .info{ padding:20px; display:flex; flex-direction:column; flex:1; }
 .cat{ font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--peach); font-weight:700; }
@@ -113,12 +115,14 @@ h1,h2,h3{ font-family:"Patrick Hand",cursive; font-weight:400; }
 .status-banner{ display:inline-block; padding:12px 20px; border-radius:12px; font-weight:700; font-size:14px; margin:20px 0; }
 .status-banner.reserved{ background:#fff3dc; color:#8a6400; }
 .status-banner.paid{ background:#e7f6ec; color:#2c6e46; }
+.status-banner.agotado{ background:#fdeaea; color:#a23b3b; }
 
 /* CONFIRMACION / BINANCE */
 .confirm{ max-width:620px; margin:auto; padding:60px 25px 100px; text-align:center; }
 .confirm h1{ font-size:58px; color:var(--ink); }
 .binance-box{ text-align:left; background:#0f172a; color:#e2e8f0; border-radius:18px; padding:28px; margin:28px 0; font-family:monospace; font-size:14px; line-height:1.9; white-space:pre-wrap; word-break:break-all; }
 .binance-box b{ color:#f5c95b; }
+.contacto-box{ text-align:center; background:#eef3fa; border:1px solid #cfe0f5; color:var(--ink); border-radius:14px; padding:16px 20px; font-size:14px; line-height:1.6; margin:0 0 16px; }
 .pending{ background:#fff3dc; border:1px solid #f2ddb0; color:#8a6400; border-radius:14px; padding:18px 22px; font-size:14px; line-height:1.7; margin:24px 0; }
 
 /* HOW IT WORKS */

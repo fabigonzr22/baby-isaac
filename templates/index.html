@@ -48,7 +48,9 @@
       <a href="{{ url_for('producto', producto_id=p['id']) }}">
         <div class="art">
           <span class="emoji">{{ p['emoji'] }}</span>
-          <span class="pill {{ p['estado'] }}">{{ STATUS_LABEL[p['estado']] }}</span>
+          <span class="pill {% if p['agotado'] %}agotado{% else %}available{% endif %}">
+            {% if p['agotado'] %}Agotado{% elif p['cantidad'] > 1 %}Quedan {{ p['disponibles'] }}{% else %}Disponible{% endif %}
+          </span>
         </div>
         <div class="info">
           <span class="cat">{{ p['categoria'] }}</span>
@@ -56,7 +58,9 @@
           <p>{{ p['descripcion'] }}</p>
           <div class="foot">
             <strong>{{ p['precio']|precio }}</strong>
-            <span class="gift {% if p['estado'] != 'available' %}disabled{% endif %}">{% if p['estado'] == 'available' %}Quiero regalarlo{% else %}Reservado{% endif %}</span>
+            <span class="gift {% if p['agotado'] %}disabled{% endif %}">
+              {% if p['agotado'] %}Agotado{% else %}Quiero regalarlo{% endif %}
+            </span>
           </div>
         </div>
       </a>
