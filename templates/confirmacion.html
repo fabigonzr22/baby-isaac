@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmación · Baby Isaac{% endblock %}
+
+{% block body %}
+
+<header class="hero" style="min-height:0;">
+  <nav class="nav">
+    <a class="brand" href="{{ url_for('home') }}">ISAAC <span>♡</span></a>
+    <a class="nav-link" href="{{ url_for('home') }}#wishlist">← Volver a la wishlist</a>
+  </nav>
+</header>
+
+<section class="confirm">
+  <span class="emoji" style="font-size:90px;">🎀</span>
+  <h1>¡Reservado, {{ nombre }}!</h1>
+  <p style="color:var(--muted); font-size:15px; line-height:1.7;">
+    Elegiste <b style="color:var(--ink);">{{ p['nombre'] }}</b> por
+    <b style="color:var(--ink);">{{ p['precio']|precio }}</b>.
+    Completa el pago con estos datos:
+  </p>
+
+  <div class="binance-box">{{ binance }}</div>
+
+  <div class="pending">
+    ⏳ <b>Tu regalo queda pendiente de confirmación.</b><br>
+    Una vez verifiquemos el pago, lo marcaremos como recibido.
+    ¡Gracias por tu detalle con Isaac! 💙
+  </div>
+
+  <a class="button" href="{{ url_for('home') }}">Volver a la wishlist</a>
+</section>
+
+<footer>
+  <div class="footer-brand">ISAAC <span>♡</span></div>
+  <p>Nos vemos en el baby shower ☁️</p>
+</footer>
+
+{% endblock %}

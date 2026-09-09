@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Login · Panel privado{% endblock %}
+
+{% block body %}
+
+<section class="login">
+  <h1>🔐 Panel de Fabi</h1>
+  <p class="sub">Acceso privado para administrar la wishlist de Isaac</p>
+  <form method="post" action="{{ url_for('admin_login_post') }}">
+    <label for="usuario">Usuario</label>
+    <input type="text" id="usuario" name="usuario" placeholder="tu usuario" required autofocus>
+    <label for="password">Contraseña</label>
+    <input type="password" id="password" name="password" placeholder="••••••••" required>
+    <button class="button" type="submit" style="width:100%;">Entrar</button>
+  </form>
+  <p style="margin-top:22px;"><a href="{{ url_for('home') }}" style="color:var(--muted); font-size:13px;">← Volver a la wishlist</a></p>
+</section>
+
+{% endblock %}

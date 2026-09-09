@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+<header class="hero">
+  <nav class="nav">
+    <a class="brand" href="{{ url_for('home') }}">ISAAC <span>♡</span></a>
+    <a class="nav-link" href="#wishlist">Ver wishlist ↓</a>
+  </nav>
+
+  <span class="doodle d1">✦</span>
+  <span class="doodle d2">☁</span>
+  <span class="doodle d3">○</span>
+  <span class="doodle d4">⌁</span>
+  <span class="doodle d5">♡</span>
+  <span class="doodle d6">✧</span>
+
+  <div class="hero-content">
+    <span class="eyebrow">UNA PEQUEÑA WISHLIST</span>
+    <h1>Baby<br><span>Isaac</span></h1>
+    <p class="hero-copy">Estamos preparando todo para recibir a nuestro pequeño. ¿Quieres ser parte de su llegada?</p>
+    <a class="button" href="#wishlist">Elegir un regalo →</a>
+  </div>
+</header>
+
+<section class="intro">
+  <div class="star">✦</div>
+  <span class="eyebrow">PARA ISAAC, CON MUCHO AMOR</span>
+  <h2>Porque cada<br><em>detalle cuenta.</em></h2>
+  <p>Creamos esta pequeña lista para que puedas elegir algo que realmente necesitemos para la llegada de Isaac. Gracias por acompañarnos en esta aventura.</p>
+</section>
+
+<section class="section" id="wishlist">
+  <span class="eyebrow">LA WISHLIST DE ISAAC</span>
+  <h2>Pequeñas cosas para<br><span>una gran llegada.</span></h2>
+  <p>Elige el regalo que quieras hacerle a Isaac. Nosotros nos encargamos del resto.</p>
+
+  <div class="filters">
+    <a class="filter {% if not categoria_actual %}active{% endif %}" href="{{ url_for('home') }}">Todos</a>
+    {% for c in categorias %}
+    <a class="filter {% if categoria_actual == c %}active{% endif %}" href="{{ url_for('home', categoria=c) }}">{{ c }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="grid">
+    {% for p in productos %}
+    <div class="card">
+      <a href="{{ url_for('producto', producto_id=p['id']) }}">
+        <div class="art">
+          <span class="emoji">{{ p['emoji'] }}</span>
+          <span class="pill {{ p['estado'] }}">{{ STATUS_LABEL[p['estado']] }}</span>
+        </div>
+        <div class="info">
+          <span class="cat">{{ p['categoria'] }}</span>
+          <h3>{{ p['nombre'] }}</h3>
+          <p>{{ p['descripcion'] }}</p>
+          <div class="foot">
+            <strong>{{ p['precio']|precio }}</strong>
+            <span class="gift {% if p['estado'] != 'available' %}disabled{% endif %}">{% if p['estado'] == 'available' %}Quiero regalarlo{% else %}Reservado{% endif %}</span>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="how">
+  <span class="eyebrow">¿CÓMO FUNCIONA?</span>
+  <h2>Regalarle algo a Isaac<br><span>es muy fácil.</span></h2>
+  <div class="steps">
+    <div class="step"><b>01</b><span>🎁</span><h3>Elige</h3><p>Encuentra algo de la wishlist que quieras regalar.</p></div>
+    <div class="step"><b>02</b><span>✍️</span><h3>Escribe tu nombre</h3><p>Así sabremos quién tuvo el detalle con Isaac.</p></div>
+    <div class="step"><b>03</b><span>💙</span><h3>Transfiere</h3><p>Te mostraremos los datos para completar el pago.</p></div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-brand">ISAAC <span>♡</span></div>
+  <p>Nos vemos en el baby shower ☁️</p>
+</footer>
+
+{% endblock %}

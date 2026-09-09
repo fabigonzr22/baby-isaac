@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard · Panel privado{% endblock %}
+
+{% block body %}
+
+<div class="admin">
+  <header>
+    <h1>🛸 Dashboard de Isaac</h1>
+    <div class="nav-actions">
+      <a class="button" href="{{ url_for('home') }}" target="_blank">Ver wishlist ↗</a>
+      <a class="btn btn-edit" href="{{ url_for('admin_logout') }}">Cerrar sesión</a>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><b>{{ counts['available'] }}</b><span>Disponibles</span></div>
+    <div class="stat"><b>{{ counts['reserved'] }}</b><span>Reservados</span></div>
+    <div class="stat"><b>{{ counts['paid'] }}</b><span>Pagados</span></div>
+  </div>
+
+  <h2>⚙️ Configuración</h2>
+  <details open>
+    <summary>Datos de pago (Binance) y contraseña</summary>
+    <form class="inline-form" method="post" action="{{ url_for('guardar_config') }}">
+      <div class="full">
+        <label>Datos de pago Binance (lo que verán los invitados)</label>
+        <textarea name="binance" rows="5" placeholder="USDT · Red TRC20&#10;Dirección: ...&#10;Nombre: ...">{{ binance }}</textarea>
+      </div>
+      <div class="full">
+        <label>Cambiar contraseña del panel (opcional)</label>
+        <input type="password" name="nueva_password" placeholder="Dejar vacío para no cambiar">
+      </div>
+      <div class="full"><button class="button" type="submit">Guardar configuración 💾</button></div>
+    </form>
+  </details>
+
+  <h2>➕ Agregar regalo</h2>
+  <details>
+    <summary>Nuevo regalo</summary>
+    <form class="inline-form" method="post" action="{{ url_for('nuevo_regalo') }}">
+      <div><label>Nombre</label><input name="nombre" required placeholder="Ej. Cuna de viaje"></div>
+      <div><label>Emoji</label><input name="emoji" placeholder="🛏️" value="🎁"></div>
+      <div><label>Precio ($)</label><input name="precio" type="number" step="0.01" placeholder="0"></div>
+      <div>
+        <label>Categoría</label>
+        <select name="categoria">
+          {% for c in categorias %}
+          <option>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="full"><label>Descripción</label><textarea name="descripcion" placeholder="Una breve descripción..."></textarea></div>
+      <div class="full"><button class="button" type="submit">Agregar regalo ✅</button></div>
+    </form>
+  </details>
+
+  <h2>🎁 Todos los regalos</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Regalo</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        {% for p in productos %}
+        <tr>
+          <td>{{ p['emoji'] }} {{ p['nombre'] }}</td>
+          <td>{{ p['categoria'] }}</td>
+          <td>{{ p['precio']|precio }}</td>
+          <td><span class="badge {{ p['estado'] }}">{{ STATUS_LABEL[p['estado']] }}</span></td>
+          <td>
+            {% if p['estado'] == 'reserved' %}
+            <form method="post" action="{{ url_for('confirmar_pago', producto_id=p['id']) }}" style="display:inline;">
+              <button class="btn btn-confirm" type="submit">Confirmar pago</button>
+            </form>
+            <form method="post" action="{{ url_for('liberar_regalo', producto_id=p['id']) }}" style="display:inline;">
+              <button class="btn btn-release" type="submit">Liberar</button>
+            </form>
+            {% endif %}
+            <details style="display:inline; padding:0; margin:0; background:none; border:0;">
+              <summary class="btn btn-edit">Editar</summary>
+              <form class="inline-form" method="post" action="{{ url_for('editar_regalo', producto_id=p['id']) }}" style="position:absolute; background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:6px; z-index:5; box-shadow:0 10px 30px rgba(0,0,0,.15);">
+                <div><label>Nombre</label><input name="nombre" value="{{ p['nombre'] }}" required></div>
+                <div><label>Emoji</label><input name="emoji" value="{{ p['emoji'] }}"></div>
+                <div><label>Precio</label><input name="precio" type="number" step="0.01" value="{{ p['precio'] }}"></div>
+                <div><label>Categoría</label><select name="categoria">
+                  {% for c in categorias %}
+                  <option {% if c == p['categoria'] %}selected{% endif %}>{{ c }}</option>
+                  {% endfor %}
+                </select></div>
+                <div class="full"><label>Descripción</label><textarea name="descripcion">{{ p['descripcion'] }}</textarea></div>
+                <div class="full"><button class="btn btn-confirm" type="submit">Guardar</button></div>
+              </form>
+            </details>
+            <form method="post" action="{{ url_for('eliminar_regalo', producto_id=p['id']) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este regalo?');">
+              <button class="btn btn-del" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>👥 ¿Quién regaló qué?</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Regalo</th><th>Regalador</th><th>Estado</th><th>Reservado</th><th>Pagado</th></tr>
+      </thead>
+      <tbody>
+        {% for r in reservas %}
+        <tr>
+          <td>{{ r['emoji'] }} {{ r['producto_nombre'] }}</td>
+          <td>{{ r['regalador_nombre'] }}</td>
+          <td><span class="badge {{ 'paid' if r['estado'] == 'paid' else 'reserved' }}">{{ 'Pagado' if r['estado'] == 'paid' else 'Reservado' }}</span></td>
+          <td>{{ r['creado_en'][:16]|replace('T',' ') }}</td>
+          <td>{{ (r['pagado_en'] or '—')[:16]|replace('T',' ') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center; color:var(--muted);">Aún no hay reservas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{{ p['nombre'] }} · Baby Isaac{% endblock %}
+
+{% block body %}
+
+<header class="hero" style="min-height:0;">
+  <nav class="nav">
+    <a class="brand" href="{{ url_for('home') }}">ISAAC <span>♡</span></a>
+    <a class="nav-link" href="{{ url_for('home') }}#wishlist">← Volver a la wishlist</a>
+  </nav>
+</header>
+
+<section class="detail">
+  <span class="emoji">{{ p['emoji'] }}</span>
+  <span class="cat" style="display:block; margin-top:14px;">{{ p['categoria'] }}</span>
+  <h1>{{ p['nombre'] }}</h1>
+  <p>{{ p['descripcion'] }}</p>
+  <div class="price-big">{{ p['precio']|precio }}</div>
+
+  {% if p['estado'] == 'available' %}
+    <form class="form-reserva" method="post" action="{{ url_for('reservar', producto_id=p['id']) }}">
+      <label for="nombre">Tu nombre</label>
+      <input type="text" id="nombre" name="nombre" placeholder="¿Quién regala?" required autofocus>
+      <button class="button" type="submit" style="width:100%;">Quiero regalarlo 🎁</button>
+    </form>
+  {% else %}
+    <div class="status-banner {{ p['estado'] }}">
+      {% if p['estado'] == 'reserved' %}
+        🎀 Este regalo ya está reservado.
+      {% else %}
+        ✅ Este regalo ya fue regalado. ¡Gracias!
+      {% endif %}
+    </div>
+    <a class="button" href="{{ url_for('home') }}#wishlist">Elegir otro regalo</a>
+  {% endif %}
+</section>
+
+<footer>
+  <div class="footer-brand">ISAAC <span>♡</span></div>
+  <p>Nos vemos en el baby shower ☁️</p>
+</footer>
+
+{% endblock %}
