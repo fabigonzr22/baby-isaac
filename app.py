@@ -207,7 +207,9 @@ def precio_filter(precio):
         return "Por definir"
     if p <= 0:
         return "Por definir"
-    return f"${p:,.0f}"
+    if p == int(p):
+        return f"${p:,.0f}"
+    return f"${p:,.2f}"
 
 
 def contar_reservas_por_producto():
