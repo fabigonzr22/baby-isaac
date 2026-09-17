@@ -125,12 +125,12 @@ def init_db():
     cur = db.execute("SELECT COUNT(*) FROM productos")
     if cur.fetchone()[0] == 0:
         seed = [
-            ("Bodys de algodón", "Suaves y cómodos para el día a día de Isaac.", "Ropa", 5, "👕", "", 5),
-            ("Pijamas", "Para que Isaac duerma calentito y cómodo.", "Ropa", 15, "🌙", "", 5),
-            ("Medias", "Para mantener calentitos esos piececitos.", "Ropa", 10, "🧦", "", 5),
-            ("Franelas", "Franelas suaves para el día a día.", "Ropa", 16, "👚", "", 5),
-            ("Camisas", "Camisas bonitas para Isaac.", "Ropa", 5, "👔", "", 5),
-            ("Pantalones", "Pantalones cómodos para el bebé.", "Ropa", 15, "👖", "", 5),
+            ("Bodys de algodón", "Suaves y cómodos para el día a día de Isaac.", "Ropa", 5, "👕", "bodys.jpg", 5),
+            ("Pijamas", "Para que Isaac duerma calentito y cómodo.", "Ropa", 15, "🌙", "pijamas.jpg", 5),
+            ("Medias", "Para mantener calentitos esos piececitos.", "Ropa", 10, "🧦", "medias.jpg", 5),
+            ("Franelas", "Franelas suaves para el día a día.", "Ropa", 16, "👚", "franelas.jpg", 5),
+            ("Camisas", "Camisas bonitas para Isaac.", "Ropa", 5, "👔", "camisas.jpg", 5),
+            ("Pantalones", "Pantalones cómodos para el bebé.", "Ropa", 15, "👖", "pantalones.jpg", 5),
             ("Colchón para colecho", "Para que Isaac duerma cerca y seguro.", "Dormir", 35, "🛏️", "colchon_colecho.jpg", 1),
             ("Sábanas de algodón", "Sábanas suaves de algodón para la cuna.", "Dormir", 28, "🧺", "sabanas.jpg", 1),
             ("Mantas", "Mantas abrigadas para Isaac.", "Dormir", 24, "🧸", "mantas.jpg", 1),
@@ -139,12 +139,12 @@ def init_db():
             ("Porta bebé", "Para llevar a Isaac cerca de ti.", "Paseo", 34, "👶", "porta_bebe.jpg", 1),
             ("Libro para bebé (0-3 meses)", "Primeras lecturas para estimular a Isaac.", "Aprendizaje", 25, "📖", "libro.jpg", 1),
             ("Pañalera", "Para salir de paseo con todo lo necesario.", "Paseo", 40, "🎒", "panalera.jpg", 1),
-            ("Pañales", "Los básicos de todo bebé.", "Cuidado", 0, "🧷", "", 5),
-            ("Termómetro digital", "Para cuidar la temperatura de Isaac.", "Cuidado", 30, "🌡️", "", 1),
-            ("Aspirador nasal eléctrico", "Para despejar la naricita de Isaac.", "Cuidado", 0, "🔌", "", 1),
-            ("Aspirador nasal manual", "Alternativa manual y práctica.", "Cuidado", 20, "🤧", "", 1),
-            ("Nebulizador", "Para cuidar las vías respiratorias de Isaac.", "Cuidado", 0, "🫧", "", 1),
-            ("Teteros / limpiador de tetero", "Kit de teteros y limpiador.", "Alimentación", 65, "🍼", "", 1),
+            ("Pañales", "Los básicos de todo bebé.", "Cuidado", 0, "🧷", "panales.jpg", 5),
+            ("Termómetro digital", "Para cuidar la temperatura de Isaac.", "Cuidado", 30, "🌡️", "termometro.jpg", 1),
+            ("Aspirador nasal eléctrico", "Para despejar la naricita de Isaac.", "Cuidado", 0, "🔌", "aspirador_electrico.jpg", 1),
+            ("Aspirador nasal manual", "Alternativa manual y práctica.", "Cuidado", 20, "🤧", "aspirador_manual.jpg", 1),
+            ("Nebulizador", "Para cuidar las vías respiratorias de Isaac.", "Cuidado", 0, "🫧", "nebulizador.jpg", 1),
+            ("Teteros / limpiador de tetero", "Kit de teteros y limpiador.", "Alimentación", 65, "🍼", "teteros.jpg", 1),
         ]
         now = datetime.now(timezone.utc).isoformat()
         db.executemany(
