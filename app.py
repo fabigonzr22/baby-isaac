@@ -86,6 +86,7 @@ def init_db():
         categoria   TEXT NOT NULL,
         precio      REAL NOT NULL,
         emoji       TEXT NOT NULL DEFAULT '🎁',
+        imagen      TEXT NOT NULL DEFAULT '',
         cantidad    INTEGER NOT NULL DEFAULT 1,
         creado_en   TEXT NOT NULL
     );
@@ -113,36 +114,42 @@ def init_db():
     """)
     db.commit()
 
+    # Migración: añadir columna `imagen` si no existe.
+    cols = [r[1] for r in db.execute("PRAGMA table_info(productos)").fetchall()]
+    if cols and "imagen" not in cols:
+        db.execute("ALTER TABLE productos ADD COLUMN imagen TEXT NOT NULL DEFAULT ''")
+        db.commit()
+
     # Semillas iniciales si la tabla está vacía.
     # cantidad: cuántas unidades se pueden regalar de cada cosa.
     cur = db.execute("SELECT COUNT(*) FROM productos")
     if cur.fetchone()[0] == 0:
         seed = [
-            ("Bodys de algodón", "Suaves y cómodos para el día a día de Isaac.", "Ropa", 5, "👕", 5),
-            ("Pijamas", "Para que Isaac duerma calentito y cómodo.", "Ropa", 15, "🌙", 5),
-            ("Medias", "Para mantener calentitos esos piececitos.", "Ropa", 10, "🧦", 5),
-            ("Franelas", "Franelas suaves para el día a día.", "Ropa", 16, "👚", 5),
-            ("Camisas", "Camisas bonitas para Isaac.", "Ropa", 5, "👔", 5),
-            ("Pantalones", "Pantalones cómodos para el bebé.", "Ropa", 15, "👖", 5),
-            ("Colchón para colecho", "Para que Isaac duerma cerca y seguro.", "Dormir", 35, "🛏️", 1),
-            ("Sábanas de algodón", "Sábanas suaves de algodón para la cuna.", "Dormir", 28, "🧺", 1),
-            ("Mantas", "Mantas abrigadas para Isaac.", "Dormir", 24, "🧸", 1),
-            ("Swaddle", "Para envolver y calmar al bebé.", "Dormir", 25, "🦢", 1),
-            ("Lámpara de noche", "Luz suave para las noches de Isaac.", "Dormir", 25, "💡", 1),
-            ("Porta bebé", "Para llevar a Isaac cerca de ti.", "Paseo", 34, "👶", 1),
-            ("Libro para bebé (0-3 meses)", "Primeras lecturas para estimular a Isaac.", "Aprendizaje", 25, "📖", 1),
-            ("Pañalera", "Para salir de paseo con todo lo necesario.", "Paseo", 40, "🎒", 1),
-            ("Pañales", "Los básicos de todo bebé.", "Cuidado", 0, "🧷", 5),
-            ("Termómetro digital", "Para cuidar la temperatura de Isaac.", "Cuidado", 30, "🌡️", 1),
-            ("Aspirador nasal eléctrico", "Para despejar la naricita de Isaac.", "Cuidado", 0, "🔌", 1),
-            ("Aspirador nasal manual", "Alternativa manual y práctica.", "Cuidado", 20, "🤧", 1),
-            ("Nebulizador", "Para cuidar las vías respiratorias de Isaac.", "Cuidado", 0, "🫧", 1),
-            ("Teteros / limpiador de tetero", "Kit de teteros y limpiador.", "Alimentación", 65, "🍼", 1),
+            ("Bodys de algodón", "Suaves y cómodos para el día a día de Isaac.", "Ropa", 5, "👕", "", 5),
+            ("Pijamas", "Para que Isaac duerma calentito y cómodo.", "Ropa", 15, "🌙", "", 5),
+            ("Medias", "Para mantener calentitos esos piececitos.", "Ropa", 10, "🧦", "", 5),
+            ("Franelas", "Franelas suaves para el día a día.", "Ropa", 16, "👚", "", 5),
+            ("Camisas", "Camisas bonitas para Isaac.", "Ropa", 5, "👔", "", 5),
+            ("Pantalones", "Pantalones cómodos para el bebé.", "Ropa", 15, "👖", "", 5),
+            ("Colchón para colecho", "Para que Isaac duerma cerca y seguro.", "Dormir", 35, "🛏️", "colchon_colecho.jpg", 1),
+            ("Sábanas de algodón", "Sábanas suaves de algodón para la cuna.", "Dormir", 28, "🧺", "sabanas.jpg", 1),
+            ("Mantas", "Mantas abrigadas para Isaac.", "Dormir", 24, "🧸", "mantas.jpg", 1),
+            ("Swaddle", "Para envolver y calmar al bebé.", "Dormir", 25, "🦢", "swaddle.jpg", 1),
+            ("Lámpara de noche", "Luz suave para las noches de Isaac.", "Dormir", 25, "💡", "lampara.jpg", 1),
+            ("Porta bebé", "Para llevar a Isaac cerca de ti.", "Paseo", 34, "👶", "porta_bebe.jpg", 1),
+            ("Libro para bebé (0-3 meses)", "Primeras lecturas para estimular a Isaac.", "Aprendizaje", 25, "📖", "libro.jpg", 1),
+            ("Pañalera", "Para salir de paseo con todo lo necesario.", "Paseo", 40, "🎒", "panalera.jpg", 1),
+            ("Pañales", "Los básicos de todo bebé.", "Cuidado", 0, "🧷", "", 5),
+            ("Termómetro digital", "Para cuidar la temperatura de Isaac.", "Cuidado", 30, "🌡️", "", 1),
+            ("Aspirador nasal eléctrico", "Para despejar la naricita de Isaac.", "Cuidado", 0, "🔌", "", 1),
+            ("Aspirador nasal manual", "Alternativa manual y práctica.", "Cuidado", 20, "🤧", "", 1),
+            ("Nebulizador", "Para cuidar las vías respiratorias de Isaac.", "Cuidado", 0, "🫧", "", 1),
+            ("Teteros / limpiador de tetero", "Kit de teteros y limpiador.", "Alimentación", 65, "🍼", "", 1),
         ]
         now = datetime.now(timezone.utc).isoformat()
         db.executemany(
-            "INSERT INTO productos (nombre, descripcion, categoria, precio, emoji, cantidad, creado_en) "
-            "VALUES (?,?,?,?,?,?,?)", [(*p, now) for p in seed])
+            "INSERT INTO productos (nombre, descripcion, categoria, precio, emoji, imagen, cantidad, creado_en) "
+            "VALUES (?,?,?,?,?,?,?,?)", [(*p, now) for p in seed])
         db.commit()
     db.close()
 
@@ -435,6 +442,7 @@ def nuevo_regalo():
     categoria = request.form.get("categoria", "").strip()
     precio = request.form.get("precio", "0").strip()
     emoji = request.form.get("emoji", "🎁").strip()
+    imagen = request.form.get("imagen", "").strip()
     cantidad = request.form.get("cantidad", "1").strip()
 
     if not nombre or not categoria:
@@ -452,9 +460,9 @@ def nuevo_regalo():
 
     db = get_db()
     db.execute(
-        "INSERT INTO productos (nombre, descripcion, categoria, precio, emoji, cantidad, creado_en) "
-        "VALUES (?,?,?,?,?,?,?)",
-        (nombre, descripcion, categoria, precio_f, emoji, cantidad_i, now_iso()))
+        "INSERT INTO productos (nombre, descripcion, categoria, precio, emoji, imagen, cantidad, creado_en) "
+        "VALUES (?,?,?,?,?,?,?,?)",
+        (nombre, descripcion, categoria, precio_f, emoji, imagen, cantidad_i, now_iso()))
     db.commit()
     flash(f"Regalo '{nombre}' agregado ✅", "ok")
     return redirect(url_for("dashboard"))
@@ -481,9 +489,15 @@ def editar_regalo(producto_id):
         cantidad_i = 1
 
     db = get_db()
+    imagen = request.form.get("imagen", "").strip()
+    if not imagen:
+        # Conservar la imagen actual si el formulario no la trae.
+        actual = db.execute(
+            "SELECT imagen FROM productos WHERE id = ?", (producto_id,)).fetchone()
+        imagen = actual["imagen"] if actual else ""
     db.execute(
-        "UPDATE productos SET nombre=?, descripcion=?, categoria=?, precio=?, emoji=?, cantidad=? WHERE id=?",
-        (nombre, descripcion, categoria, precio_f, emoji, cantidad_i, producto_id))
+        "UPDATE productos SET nombre=?, descripcion=?, categoria=?, precio=?, emoji=?, imagen=?, cantidad=? WHERE id=?",
+        (nombre, descripcion, categoria, precio_f, emoji, imagen, cantidad_i, producto_id))
     db.commit()
     flash(f"Regalo '{nombre}' actualizado ✅", "ok")
     return redirect(url_for("dashboard"))

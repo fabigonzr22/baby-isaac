@@ -47,7 +47,11 @@
     <div class="card">
       <a href="{{ url_for('producto', producto_id=p['id']) }}">
         <div class="art">
+          {% if p['imagen'] %}
+          <img class="prod-img" src="{{ url_for('static', filename='img/' ~ p['imagen']) }}" alt="{{ p['nombre'] }}">
+          {% else %}
           <span class="emoji">{{ p['emoji'] }}</span>
+          {% endif %}
           <span class="pill {% if p['agotado'] %}agotado{% else %}available{% endif %}">
             {% if p['agotado'] %}Agotado{% elif p['cantidad'] > 1 %}Quedan {{ p['disponibles'] }}{% else %}Disponible{% endif %}
           </span>
