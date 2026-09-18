@@ -29,13 +29,58 @@
     <form class="form-reserva" method="post" action="{{ url_for('reservar', producto_id=p['id']) }}">
       <label for="nombre">Tu nombre</label>
       <input type="text" id="nombre" name="nombre" placeholder="¿Quién regala?" required autofocus>
-      <button class="button" type="submit" style="width:100%;">Quiero regalarlo 🎁</button>
+      <button class="button" type="submit" style="width:100%;">Lo regalo completo 🎁</button>
     </form>
   {% else %}
     <div class="status-banner agotado">
       😢 Este regalo ya no está disponible.
     </div>
     <a class="button" href="{{ url_for('home') }}#wishlist">Elegir otro regalo</a>
+  {% endif %}
+
+  {% if permitir_aporte %}
+  <div class="aporte-box">
+    <h2>🤝 Aporte compartido</h2>
+    <p>Este regalo es especial. ¡Entre varios podemos completarlo! Aporta una parte y lo compramos entre todos.</p>
+
+    <div class="goal">
+      <div class="goal-bar">
+        <div class="goal-fill" style="width: {{ (aportado / p['precio'] * 100) if p['precio'] > 0 else 0 }}%;"></div>
+      </div>
+      <div class="goal-labels">
+        <span>Recaudado: <strong>{{ aportado|precio }}</strong></span>
+        <span>Meta: <strong>{{ p['precio']|precio }}</strong></span>
+      </div>
+    </div>
+
+    {% set faltante = p['precio'] - aportado %}
+    {% if faltante > 0.005 %}
+      <p class="goal-faltante">Falta <strong>{{ faltante|precio }}</strong> para completar el regalo.</p>
+      <form class="form-reserva" method="post" action="{{ url_for('aportar', producto_id=p['id']) }}">
+        <label for="aporte_nombre">Tu nombre</label>
+        <input type="text" id="aporte_nombre" name="nombre" placeholder="¿Quién aporta?" required>
+        <label for="aporte_monto">Monto a aportar ($)</label>
+        <input type="number" id="aporte_monto" name="monto" step="0.01" min="1" max="{{ faltante }}" placeholder="Ej: 20" required>
+        <button class="button aporte-btn" type="submit" style="width:100%;">Aportar 💛</button>
+      </form>
+    {% else %}
+      <div class="status-banner" style="background:#e7f6ec; color:#2c6e46; border:1px solid #bfe5cd;">
+        🎉 ¡Meta completada! Gracias a todos los que aportaron.
+      </div>
+    {% endif %}
+
+    {% if aportes %}
+    <div class="aportes-list">
+      <h3>Aportes recibidos</h3>
+      {% for a in aportes %}
+      <div class="aporte-item">
+        <span>{{ a['nombre'] }}</span>
+        <strong>{{ a['monto']|precio }}</strong>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
   {% endif %}
 </section>
 

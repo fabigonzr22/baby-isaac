@@ -136,6 +136,47 @@
       </tbody>
     </table>
   </div>
+
+  <h2>💛 Aportes compartidos</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Regalo</th><th>Aportador</th><th>Monto</th><th>Fecha</th></tr>
+      </thead>
+      <tbody>
+        {% for a in aportes %}
+        <tr>
+          <td>{{ a['producto_nombre'] }}</td>
+          <td>{{ a['nombre'] }}</td>
+          <td><strong>{{ a['monto']|precio }}</strong></td>
+          <td>{{ a['creado_en'][:16]|replace('T',' ') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center; color:var(--muted);">Aún no hay aportes.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>🎉 Asistentes confirmados ({{ asistentes|length }})</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Nombre</th><th>Confirmado</th></tr>
+      </thead>
+      <tbody>
+        {% for a in asistentes %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ a['nombre'] }}</td>
+          <td>{{ a['creado_en'][:16]|replace('T',' ') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center; color:var(--muted);">Aún no hay asistentes confirmados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% endblock %}

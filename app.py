@@ -18,7 +18,7 @@ import secrets
 from datetime import datetime, timezone
 
 from flask import (Flask, g, render_template, request, redirect,
-                   url_for, session, flash, abort)
+                   url_for, session, flash, abort, jsonify)
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # ---------------------------------------------------------------------------
@@ -111,6 +111,20 @@ def init_db():
         clave  TEXT PRIMARY KEY,
         valor  TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS aportes (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        producto_id INTEGER NOT NULL REFERENCES productos(id) ON DELETE CASCADE,
+        nombre      TEXT NOT NULL,
+        monto       REAL NOT NULL,
+        creado_en   TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS asistentes (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre     TEXT NOT NULL,
+        creado_en  TEXT NOT NULL
+    );
     """)
     db.commit()
 
@@ -161,6 +175,9 @@ def now_iso():
 
 
 CATEGORIES = ["Ropa", "Dormir", "Paseo", "Alimentación", "Cuidado", "Aprendizaje"]
+
+# Productos con precio estrictamente mayor a este monto permiten "aporte compartido".
+APORTE_MIN = 100.0
 
 
 def is_admin():
@@ -243,6 +260,22 @@ def enriquecer(rows):
     return out
 
 
+def total_aportado(db, producto_id):
+    """Suma de todos los aportes de un producto."""
+    row = db.execute(
+        "SELECT COALESCE(SUM(monto), 0) AS total FROM aportes WHERE producto_id = ?",
+        (producto_id,)).fetchone()
+    return float(row["total"])
+
+
+def aportes_de(producto_id):
+    """Lista de aportes de un producto (más recientes primero)."""
+    db = get_db()
+    return db.execute(
+        "SELECT * FROM aportes WHERE producto_id = ? ORDER BY creado_en DESC",
+        (producto_id,)).fetchall()
+
+
 # ---------------------------------------------------------------------------
 # Página pública
 # ---------------------------------------------------------------------------
@@ -271,7 +304,13 @@ def producto(producto_id):
     if p is None:
         abort(404)
     (p,) = enriquecer([p])
-    return render_template("producto.html", p=p)
+    aportado = total_aportado(db, producto_id)
+    permitir_aporte = p["precio"] > APORTE_MIN
+    aportes = aportes_de(producto_id)
+    return render_template("producto.html", p=p,
+                           aportado=aportado,
+                           permitir_aporte=permitir_aporte,
+                           aportes=aportes)
 
 
 @app.route("/regalo/<int:producto_id>/reservar", methods=["POST"])
@@ -321,6 +360,45 @@ def confirmacion(producto_id):
                            contacto=get_contacto())
 
 
+@app.route("/regalo/<int:producto_id>/aportar", methods=["POST"])
+def aportar(producto_id):
+    db = get_db()
+    p = db.execute("SELECT * FROM productos WHERE id = ?",
+                   (producto_id,)).fetchone()
+    if p is None:
+        abort(404)
+    nombre = request.form.get("nombre", "").strip()
+    monto_str = request.form.get("monto", "").strip()
+    if not nombre:
+        flash("Por favor escribe tu nombre para aportar.", "error")
+        return redirect(url_for("producto", producto_id=producto_id))
+    try:
+        monto = float(monto_str)
+    except ValueError:
+        monto = 0.0
+    if monto <= 0:
+        flash("Escribe un monto válido para tu aporte.", "error")
+        return redirect(url_for("producto", producto_id=producto_id))
+    db.execute(
+        "INSERT INTO aportes (producto_id, nombre, monto, creado_en) VALUES (?,?,?,?)",
+        (producto_id, nombre, monto, now_iso()))
+    db.commit()
+    flash("¡Gracias por tu aporte! 🎉", "ok")
+    return redirect(url_for("producto", producto_id=producto_id))
+
+
+@app.route("/confirmar-asistencia", methods=["POST"])
+def confirmar_asistencia():
+    db = get_db()
+    nombre = request.form.get("nombre", "").strip()
+    if not nombre:
+        return jsonify({"ok": False, "error": "Escribe tu nombre"}), 400
+    db.execute("INSERT INTO asistentes (nombre, creado_en) VALUES (?,?)",
+               (nombre, now_iso()))
+    db.commit()
+    return jsonify({"ok": True})
+
+
 # ---------------------------------------------------------------------------
 # Panel privado (admin)
 # ---------------------------------------------------------------------------
@@ -366,6 +444,16 @@ def dashboard():
         ORDER BY r.creado_en DESC
     """).fetchall()
 
+    aportes = db.execute("""
+        SELECT a.*, p.nombre AS producto_nombre
+        FROM aportes a
+        JOIN productos p ON p.id = a.producto_id
+        ORDER BY a.creado_en DESC
+    """).fetchall()
+
+    asistentes = db.execute(
+        "SELECT * FROM asistentes ORDER BY creado_en DESC").fetchall()
+
     total_disponibles = sum(p["disponibles"] for p in productos)
     total_reservados = sum(p["reservados"] for p in productos)
     total_pagados = sum(p["pagados"] for p in productos)
@@ -376,6 +464,7 @@ def dashboard():
     }
     return render_template("dashboard.html",
                            productos=productos, reservas=reservas,
+                           aportes=aportes, asistentes=asistentes,
                            counts=counts,
                            categorias=CATEGORIES,
                            binance=get_binance_data(),

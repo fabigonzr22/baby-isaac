@@ -88,4 +88,56 @@
   <p>Nos vemos en el baby shower ☁️</p>
 </footer>
 
+<!-- Modal de confirmación de asistencia (RSVP) -->
+<div class="modal-overlay" id="rsvp-modal">
+  <div class="modal-card">
+    <div class="modal-emoji">🎉</div>
+    <h2>¡Confirma tu asistencia!</h2>
+    <p>Déjanos tu nombre para saber que nos acompañarás en el baby shower de Isaac.</p>
+    <form id="rsvp-form">
+      <input type="text" id="rsvp-nombre" placeholder="Escribe tu nombre" required autocomplete="name">
+      <button type="submit" class="button" style="width:100%;">Confirmar asistencia 💙</button>
+    </form>
+    <button class="modal-close" id="rsvp-skip">Lo haré después</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var modal = document.getElementById('rsvp-modal');
+  var form = document.getElementById('rsvp-form');
+  var nombre = document.getElementById('rsvp-nombre');
+  var skip = document.getElementById('rsvp-skip');
+
+  function hide() { modal.style.display = 'none'; }
+
+  if (!localStorage.getItem('rsvp_nombre')) {
+    modal.style.display = 'flex';
+  }
+
+  if (skip) skip.addEventListener('click', hide);
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var n = nombre.value.trim();
+    if (!n) return;
+    try {
+      var res = await fetch('/confirmar-asistencia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'nombre=' + encodeURIComponent(n)
+      });
+      if (res.ok) {
+        localStorage.setItem('rsvp_nombre', n);
+        hide();
+      } else {
+        alert('Escribe tu nombre para continuar.');
+      }
+    } catch (err) {
+      alert('Hubo un error, intenta de nuevo.');
+    }
+  });
+})();
+</script>
+
 {% endblock %}
