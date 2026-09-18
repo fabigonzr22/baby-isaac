@@ -25,7 +25,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # Configuración
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "isaac.db")
+# DB_PATH se puede apuntar a un disco persistente de Render (variable de entorno
+# DB_PATH, ej. /var/data/isaac.db) para que los datos no se borren al reiniciar.
+DB_PATH = os.environ.get("DB_PATH", os.path.join(BASE_DIR, "isaac.db"))
 
 # Cambia esta contraseña en producción (variable de entorno ADMIN_PASSWORD),
 # o mejor: desde el panel admin → Configuración.
