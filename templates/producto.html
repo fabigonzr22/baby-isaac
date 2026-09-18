@@ -29,7 +29,7 @@
     <form class="form-reserva" method="post" action="{{ url_for('reservar', producto_id=p['id']) }}">
       <label for="nombre">Tu nombre</label>
       <input type="text" id="nombre" name="nombre" placeholder="¿Quién regala?" required autofocus>
-      <button class="button" type="submit" style="width:100%;">Lo regalo completo 🎁</button>
+      <button class="button" type="submit" style="width:100%;">Lo regalo! 🎁</button>
     </form>
   {% else %}
     <div class="status-banner agotado">
