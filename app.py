@@ -45,6 +45,11 @@ DEFAULT_CONTACTO = (
     "Escríbeme por WhatsApp para confirmar tu pago: "
     "TU_NUMERO_DE_WHATSAPP_AQUI")
 
+DEFAULT_PAGO_MOVIL = (
+    "Teléfono: 4124670704\n"
+    "Cédula: 29570141\n"
+    "Banco: Bancamiga")
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 
@@ -205,6 +210,11 @@ def get_contacto():
     return get_config(db, "contacto", DEFAULT_CONTACTO)
 
 
+def get_pago_movil():
+    db = get_db()
+    return get_config(db, "pago_movil", DEFAULT_PAGO_MOVIL)
+
+
 def check_admin_password(password):
     db = get_db()
     stored_hash = get_config(db, "admin_password_hash")
@@ -362,6 +372,7 @@ def confirmacion(producto_id):
     nombre = session.get("reserva_nombre", "")
     return render_template("confirmacion.html", p=p, nombre=nombre,
                            binance=get_binance_data(),
+                           pago_movil=get_pago_movil(),
                            contacto=get_contacto())
 
 
@@ -478,6 +489,7 @@ def dashboard():
                            counts=counts,
                            categorias=CATEGORIES,
                            binance=get_binance_data(),
+                           pago_movil=get_pago_movil(),
                            contacto=get_contacto())
 
 
@@ -489,7 +501,12 @@ def guardar_config():
     binance = request.form.get("binance", "").strip()
     if binance:
         set_config(db, "binance_data", binance)
-        flash("Datos de pago actualizados ✅", "ok")
+        flash("Datos de pago (Binance) actualizados ✅", "ok")
+
+    pago_movil = request.form.get("pago_movil", "").strip()
+    if pago_movil:
+        set_config(db, "pago_movil", pago_movil)
+        flash("Datos de Pago Móvil actualizados ✅", "ok")
 
     contacto = request.form.get("contacto", "").strip()
     if contacto:
