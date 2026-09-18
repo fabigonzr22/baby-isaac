@@ -90,6 +90,7 @@ h1,h2,h3{ font-family:"Patrick Hand",cursive; font-weight:400; }
 .pill.paid{ background:var(--green); color:#fff; }
 .pill.available{ background:#e7f6ec; color:#2c6e46; }
 .pill.agotado{ background:#fdeaea; color:#a23b3b; }
+.pill-share{ right:auto; left:14px; top:auto; bottom:14px; background:#fff3dc; color:#8a6400; }
 
 .info{ padding:20px; display:flex; flex-direction:column; flex:1; }
 .cat{ font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--peach); font-weight:700; }

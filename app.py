@@ -256,6 +256,7 @@ def enriquecer(rows):
         d["pagados"] = c["paid"]
         d["disponibles"] = disp
         d["agotado"] = disp <= 0
+        d["permitir_aporte"] = p["precio"] > APORTE_MIN
         out.append(d)
     return out
 

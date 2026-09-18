@@ -55,6 +55,9 @@
           <span class="pill {% if p['agotado'] %}agotado{% else %}available{% endif %}">
             {% if p['agotado'] %}Agotado{% elif p['cantidad'] > 1 %}Quedan {{ p['disponibles'] }}{% else %}Disponible{% endif %}
           </span>
+          {% if p['permitir_aporte'] %}
+          <span class="pill pill-share">🤝 Aporte compartido</span>
+          {% endif %}
         </div>
         <div class="info">
           <span class="cat">{{ p['categoria'] }}</span>
