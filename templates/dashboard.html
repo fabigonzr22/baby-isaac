@@ -141,7 +141,7 @@
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>Regalo</th><th>Aportador</th><th>Monto</th><th>Fecha</th></tr>
+        <tr><th>Regalo</th><th>Aportador</th><th>Monto</th><th>Fecha</th><th>Acciones</th></tr>
       </thead>
       <tbody>
         {% for a in aportes %}
@@ -150,9 +150,14 @@
           <td>{{ a['nombre'] }}</td>
           <td><strong>{{ a['monto']|precio }}</strong></td>
           <td>{{ a['creado_en'][:16]|replace('T',' ') }}</td>
+          <td>
+            <form method="post" action="{{ url_for('eliminar_aporte', aporte_id=a['id']) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este aporte?');">
+              <button class="btn btn-del" type="submit">Eliminar</button>
+            </form>
+          </td>
         </tr>
         {% else %}
-        <tr><td colspan="4" style="text-align:center; color:var(--muted);">Aún no hay aportes.</td></tr>
+        <tr><td colspan="5" style="text-align:center; color:var(--muted);">Aún no hay aportes.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -162,7 +167,7 @@
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>#</th><th>Nombre</th><th>Confirmado</th></tr>
+        <tr><th>#</th><th>Nombre</th><th>Confirmado</th><th>Acciones</th></tr>
       </thead>
       <tbody>
         {% for a in asistentes %}
@@ -170,9 +175,14 @@
           <td>{{ loop.index }}</td>
           <td>{{ a['nombre'] }}</td>
           <td>{{ a['creado_en'][:16]|replace('T',' ') }}</td>
+          <td>
+            <form method="post" action="{{ url_for('eliminar_asistente', asistente_id=a['id']) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este asistente?');">
+              <button class="btn btn-del" type="submit">Eliminar</button>
+            </form>
+          </td>
         </tr>
         {% else %}
-        <tr><td colspan="3" style="text-align:center; color:var(--muted);">Aún no hay asistentes confirmados.</td></tr>
+        <tr><td colspan="4" style="text-align:center; color:var(--muted);">Aún no hay asistentes confirmados.</td></tr>
         {% endfor %}
       </tbody>
     </table>

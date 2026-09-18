@@ -606,6 +606,28 @@ def eliminar_regalo(producto_id):
     return redirect(url_for("dashboard"))
 
 
+@app.route("/admin/aporte/<int:aporte_id>/eliminar", methods=["POST"])
+def eliminar_aporte(aporte_id):
+    if not is_admin():
+        return redirect(url_for("admin_login"))
+    db = get_db()
+    db.execute("DELETE FROM aportes WHERE id = ?", (aporte_id,))
+    db.commit()
+    flash("Aporte eliminado.", "ok")
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/admin/asistente/<int:asistente_id>/eliminar", methods=["POST"])
+def eliminar_asistente(asistente_id):
+    if not is_admin():
+        return redirect(url_for("admin_login"))
+    db = get_db()
+    db.execute("DELETE FROM asistentes WHERE id = ?", (asistente_id,))
+    db.commit()
+    flash("Asistente eliminado.", "ok")
+    return redirect(url_for("dashboard"))
+
+
 # ---------------------------------------------------------------------------
 # Arranque
 # ---------------------------------------------------------------------------
